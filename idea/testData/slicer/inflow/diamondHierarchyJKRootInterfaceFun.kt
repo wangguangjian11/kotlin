@@ -1,0 +1,16 @@
+// FLOW: IN
+
+interface A {
+    fun foo() = 1
+}
+
+class D : B(), C {
+    override fun foo() = 4
+}
+
+fun test(a: A, b: B, c: C, d: D) {
+    val <caret>x = a.foo()
+    val y = b.foo()
+    val z = c.foo()
+    val u = d.foo()
+}
