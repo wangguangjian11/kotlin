@@ -16,22 +16,32 @@
 
 package org.jetbrains.kotlin.codegen.extensions
 
-import org.jetbrains.kotlin.codegen.*
+import org.jetbrains.kotlin.codegen.CallBasedArgumentGenerator
+import org.jetbrains.kotlin.codegen.StackValue
+import org.jetbrains.kotlin.codegen.asmType
 import org.jetbrains.kotlin.resolve.calls.model.ResolvedCall
 import org.jetbrains.kotlin.synthetic.CompatSyntheticFunctionDescriptor
+import org.jetbrains.kotlin.synthetic.SamAdapterExtensionFunctionDescriptor
 import org.jetbrains.org.objectweb.asm.Type
 
 object CompatExpressionCodegenExtension : ExpressionCodegenExtension {
     override fun applyFunction(receiver: StackValue, resolvedCall: ResolvedCall<*>, c: ExpressionCodegenExtension.Context): StackValue? {
-        val callableDescriptor = resolvedCall.candidateDescriptor as? CompatSyntheticFunctionDescriptor ?: return null
+        var candidateDescriptor = resolvedCall.candidateDescriptor
+        if (candidateDescriptor is SamAdapterExtensionFunctionDescriptor) {
+            candidateDescriptor = candidateDescriptor.baseDescriptorForSynthetic
+        }
+        val compat = candidateDescriptor as? CompatSyntheticFunctionDescriptor ?: return null
         val receiverDescriptor = resolvedCall.dispatchReceiver!!.type.constructor.declarationDescriptor!!
-        val baseDescriptor = callableDescriptor.baseDescriptorForSynthetic
+        val baseDescriptor = compat.baseDescriptorForSynthetic
         val actualReceiver = StackValue.receiver(resolvedCall, receiver, c.codegen, null)
-        val callable = c.typeMapper.mapToCallableMethod(callableDescriptor, false)
+        val callable = c.typeMapper.mapToCallableMethod(compat, false)
+        val baseCallable = c.typeMapper.mapToCallableMethod(baseDescriptor, false)
+
+        actualReceiver.put(c.typeMapper.mapType(receiverDescriptor), c.v)
         val argGen = CallBasedArgumentGenerator(
                 c.codegen,
                 c.codegen.defaultCallGenerator,
-                callableDescriptor.valueParameters,
+                compat.valueParameters,
                 callable.valueParameterTypes
         )
         argGen.generate(
@@ -39,9 +49,7 @@ object CompatExpressionCodegenExtension : ExpressionCodegenExtension {
                 resolvedCall.valueArguments.values.toList(),
                 null
         )
-        val baseCallable = c.typeMapper.mapToCallableMethod(baseDescriptor, false)
         return StackValue.functionCall(baseDescriptor.returnType?.asmType(c.typeMapper) ?: Type.VOID_TYPE) { v ->
-            actualReceiver.put(c.typeMapper.mapType(receiverDescriptor), v)
             v.invokestatic(
                     baseCallable.owner.internalName,
                     baseCallable.getAsmMethod().name,
