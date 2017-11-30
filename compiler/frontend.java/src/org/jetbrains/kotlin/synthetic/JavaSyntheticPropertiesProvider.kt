@@ -82,8 +82,8 @@ class JavaSyntheticPropertiesScope(
         override val wrappedScope: ResolutionScope
 ) : SyntheticResolutionScope() {
     private val ownerClass = type.constructor.declarationDescriptor as ClassDescriptor
-    private val properties = storageManager.createMemoizedFunctionWithNullableValues<Name, VariableDescriptor> {
-        doGetProperty(it)
+    private val variables = storageManager.createMemoizedFunction<Name, Collection<VariableDescriptor>> {
+        super.getContributedVariables(it, NoLookupLocation.FROM_SYNTHETIC_SCOPE) + listOfNotNull(doGetProperty(it))
     }
     private val descriptors = storageManager.createLazyValue {
         doGetDescriptors()
@@ -169,16 +169,13 @@ class JavaSyntheticPropertiesScope(
 
     override fun getContributedVariables(name: Name, location: LookupLocation): Collection<VariableDescriptor> {
         recordLookup(name, location)
-        return shadowOriginalVariables(name, location) {
-            listOfNotNull(properties(name))
-        }
+        return variables(name)
     }
 
     override fun getContributedDescriptors(kindFilter: DescriptorKindFilter, nameFilter: (Name) -> Boolean): Collection<DeclarationDescriptor> {
-        return shadowOriginalDescriptors(kindFilter, nameFilter) { filter ->
-            if (filter == DescriptorKindFilter.VARIABLES) descriptors()
-            else emptyList()
-        }
+        return super.getContributedDescriptors(kindFilter, nameFilter) +
+               if (kindFilter.acceptsKinds(DescriptorKindFilter.VARIABLES_MASK)) descriptors()
+               else emptyList()
     }
 
     private class MyPropertyDescriptor(

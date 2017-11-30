@@ -33,7 +33,7 @@ private class SamAdapterSyntheticStaticFunctionsScope(
         override val wrappedScope: ResolutionScope
 ) : SyntheticResolutionScope() {
     val functions = storageManager.createMemoizedFunction<Name, List<FunctionDescriptor>> {
-        doGetFunctions(it)
+        super.getContributedFunctions(it, NoLookupLocation.FROM_SYNTHETIC_SCOPE) + doGetFunctions(it)
     }
 
     val descriptors = storageManager.createLazyValue {
@@ -56,17 +56,12 @@ private class SamAdapterSyntheticStaticFunctionsScope(
             super.getContributedDescriptors(DescriptorKindFilter.FUNCTIONS, MemberScope.ALL_NAME_FILTER)
                     .mapNotNull { wrapFunction(it) }
 
-    override fun getContributedFunctions(name: Name, location: LookupLocation): Collection<FunctionDescriptor> {
-        return shadowOriginalFunctions(name, location) {
-            functions(name)
-        }
-    }
+    override fun getContributedFunctions(name: Name, location: LookupLocation): Collection<FunctionDescriptor> = functions(name)
 
     override fun getContributedDescriptors(kindFilter: DescriptorKindFilter, nameFilter: (Name) -> Boolean): Collection<DeclarationDescriptor> {
-        return shadowOriginalDescriptors(kindFilter, nameFilter) { filter ->
-            if (filter != DescriptorKindFilter.FUNCTIONS) emptyList()
-            else descriptors()
-        }
+        return super.getContributedDescriptors(kindFilter, nameFilter) +
+               if (kindFilter.acceptsKinds(DescriptorKindFilter.FUNCTIONS_MASK)) descriptors()
+               else emptyList()
     }
 }
 
