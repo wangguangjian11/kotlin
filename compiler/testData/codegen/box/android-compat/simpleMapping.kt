@@ -30,6 +30,7 @@ public class View {
     public boolean multipleParams(int i, long l, double d, String s, char c) { return false; }
     public boolean implicitThisInSubtype() { return false; }
     public boolean getProperty() { return false; }
+    public void setProperty(boolean b) { throw new RuntimeException("FAIL setProperty"); }
 }
 
 // FILE: SubView.java
@@ -74,6 +75,7 @@ public class ViewCompat {
     static public boolean multipleParams(View v, int i, long l, double d, String s, char c) { return true; }
     static public boolean implicitThisInSubtype(View v) { return true; }
     static public boolean getProperty(View v) { return true; }
+    static public void setProperty(View v, boolean b) {}
 }
 
 // FILE: SubViewCompat.java
@@ -101,27 +103,29 @@ public class MovableCompat {
 
 // FILE: test.kt
 fun box(): String {
-    if (!View().noArgs()) return "FAIL noArgs"
+    val view = View()
+    if (!view.noArgs()) return "FAIL noArgs"
     if (!SubView().subtype()) return "FAIL subtype"
     if (!SubView().subtypeOverride()) return "FAIL subtypeOverride"
-    if (!View().boxing(0)) return "FAIL boxing"
-    if (!View().boxingResult()) return "FAIL boxingResult"
-    if (!View().vararg(0)) return "FAIL vararg"
+    if (!view.boxing(0)) return "FAIL boxing"
+    if (!view.boxingResult()) return "FAIL boxingResult"
+    if (!view.vararg(0)) return "FAIL vararg"
 //    if (!View().varargBoxing(0)) return "FAIL varargBoxing"
-    if (!View().valueVararg(0)) return "FAIL valueVararg"
+    if (!view.valueVararg(0)) return "FAIL valueVararg"
 //    if (!View().generic(0)) return "FAIL generic"
     if (!SubView().superInCompat()) return "FAIL superInCompat"
-    if (!View().samAdapter {}) return "FAIL samAdapter"
+    if (!view.samAdapter {}) return "FAIL samAdapter"
 // Interfaces are not supported
 //    if (!MovableImpl().move()) return "FAIL move"
     if (!AnotherView().inAnotherView()) return "FAIL inAnotherView"
-    if (!View().differentParamType(0)) return "FAIL differentParamType"
-    if (!View().differentReturnType()) return "FAIL differentReturnType"
-    if (!View().subtypeParam("")) return "FAIL subtypeParam"
-    if (!View().multipleParams(0, 0L, .0, "", ' ')) return "FAIL subtypeParam"
-    if (!View().run { noArgs() }) return "FAIL run { noArgs() }"
+    if (!view.differentParamType(0)) return "FAIL differentParamType"
+    if (!view.differentReturnType()) return "FAIL differentReturnType"
+    if (!view.subtypeParam("")) return "FAIL subtypeParam"
+    if (!view.multipleParams(0, 0L, .0, "", ' ')) return "FAIL subtypeParam"
+    if (!view.run { noArgs() }) return "FAIL run { noArgs() }"
     if (!KtSubView().useImplicitThis()) return "FAIL useImplicitThis"
     if (!SubView().implicitThisNotReplaced()) return "FAIL implicitThisNotReplaced"
-//    if (!View().property) return "FAIL property"
+    if (!view.property) return "FAIL property"
+    view.property = true // should not throw exception
     return "OK"
 }

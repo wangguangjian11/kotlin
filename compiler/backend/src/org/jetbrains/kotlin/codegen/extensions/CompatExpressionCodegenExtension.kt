@@ -16,32 +16,45 @@
 
 package org.jetbrains.kotlin.codegen.extensions
 
-import org.jetbrains.kotlin.codegen.CallBasedArgumentGenerator
-import org.jetbrains.kotlin.codegen.StackValue
-import org.jetbrains.kotlin.codegen.asmType
+import org.jetbrains.kotlin.codegen.*
 import org.jetbrains.kotlin.resolve.calls.model.ResolvedCall
 import org.jetbrains.kotlin.synthetic.CompatSyntheticFunctionDescriptor
 import org.jetbrains.kotlin.synthetic.SamAdapterExtensionFunctionDescriptor
+import org.jetbrains.kotlin.synthetic.SyntheticJavaPropertyDescriptor
 import org.jetbrains.org.objectweb.asm.Type
+import org.jetbrains.org.objectweb.asm.commons.InstructionAdapter
 
 object CompatExpressionCodegenExtension : ExpressionCodegenExtension {
+    override fun applyProperty(receiver: StackValue, resolvedCall: ResolvedCall<*>, c: ExpressionCodegenExtension.Context): StackValue? {
+        val propertyDescriptor = resolvedCall.candidateDescriptor as? SyntheticJavaPropertyDescriptor ?: return null
+        val getter = propertyDescriptor.getMethod as? CompatSyntheticFunctionDescriptor ?: return null
+        val setter = propertyDescriptor.setMethod as? CompatSyntheticFunctionDescriptor
+
+        return CompatProperty(
+                propertyDescriptor,
+                c.typeMapper.mapType(getter.returnType!!),
+                c.typeMapper.mapToCallableMethod(getter.baseDescriptorForSynthetic, false),
+                if (setter == null) null else c.typeMapper.mapToCallableMethod(setter.baseDescriptorForSynthetic, false),
+                StackValue.receiver(resolvedCall, receiver, c.codegen, null),
+                c
+        )
+    }
+
     override fun applyFunction(receiver: StackValue, resolvedCall: ResolvedCall<*>, c: ExpressionCodegenExtension.Context): StackValue? {
         var candidateDescriptor = resolvedCall.candidateDescriptor
         if (candidateDescriptor is SamAdapterExtensionFunctionDescriptor) {
             candidateDescriptor = candidateDescriptor.baseDescriptorForSynthetic
         }
-        val compat = candidateDescriptor as? CompatSyntheticFunctionDescriptor ?: return null
-        val receiverDescriptor = resolvedCall.dispatchReceiver!!.type.constructor.declarationDescriptor!!
-        val baseDescriptor = compat.baseDescriptorForSynthetic
-        val actualReceiver = StackValue.receiver(resolvedCall, receiver, c.codegen, null)
-        val callable = c.typeMapper.mapToCallableMethod(compat, false)
+        val functionDescriptor = candidateDescriptor as? CompatSyntheticFunctionDescriptor ?: return null
+        val callable = c.typeMapper.mapToCallableMethod(functionDescriptor, false)
+        val baseDescriptor = functionDescriptor.baseDescriptorForSynthetic
         val baseCallable = c.typeMapper.mapToCallableMethod(baseDescriptor, false)
 
-        actualReceiver.put(c.typeMapper.mapType(receiverDescriptor), c.v)
+        putReceiverOnStack(resolvedCall, receiver, c)
         val argGen = CallBasedArgumentGenerator(
                 c.codegen,
                 c.codegen.defaultCallGenerator,
-                compat.valueParameters,
+                functionDescriptor.valueParameters,
                 callable.valueParameterTypes
         )
         argGen.generate(
@@ -56,6 +69,63 @@ object CompatExpressionCodegenExtension : ExpressionCodegenExtension {
                     baseCallable.getAsmMethod().descriptor,
                     false
             )
+        }
+    }
+
+    private fun putReceiverOnStack(resolvedCall: ResolvedCall<*>, receiver: StackValue, c: ExpressionCodegenExtension.Context) {
+        val receiverDescriptor = resolvedCall.dispatchReceiver!!.type.constructor.declarationDescriptor!!
+        StackValue.receiver(resolvedCall, receiver, c.codegen, null).put(c.typeMapper.mapType(receiverDescriptor), c.v)
+    }
+
+    private class CompatProperty(
+            propertyDescriptor: SyntheticJavaPropertyDescriptor,
+            type: Type,
+            private val getter: CallableMethod,
+            private val setter: CallableMethod?,
+            receiver: StackValue,
+            c: ExpressionCodegenExtension.Context
+    ) : StackValue.Property(
+            propertyDescriptor,
+            null,
+            getter,
+            setter,
+            false,
+            null,
+            type,
+            receiver,
+            c.codegen,
+            null,
+            false
+    ) {
+        override fun putReceiver(v: InstructionAdapter, isRead: Boolean) {
+            receiver.put(receiver.type, v)
+        }
+
+        override fun putSelector(type: Type, v: InstructionAdapter) {
+            getter.genInvokeInstruction(v)
+            coerce(getter.returnType, type, v)
+        }
+
+        override fun store(rightSide: StackValue, v: InstructionAdapter, skipReceiver: Boolean) {
+            if (setter != null) {
+                putReceiver(v, false)
+                rightSide.put(rightSide.type, v)
+                storeSelector(rightSide.type, v)
+            } else {
+                super.store(rightSide, v, skipReceiver)
+            }
+        }
+
+        override fun storeSelector(topOfStackType: Type, v: InstructionAdapter) {
+            if (setter == null) error("Setter is null")
+            coerce(topOfStackType, setter.parameterTypes.last(), v)
+
+            setter.genInvokeInstruction(v)
+
+            val returnType = setter.returnType
+            if (returnType !== Type.VOID_TYPE) {
+                AsmUtil.pop(v, returnType)
+            }
         }
     }
 }

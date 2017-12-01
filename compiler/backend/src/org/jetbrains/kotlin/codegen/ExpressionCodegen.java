@@ -1668,17 +1668,8 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
         if (descriptor instanceof PropertyDescriptor) {
             PropertyDescriptor propertyDescriptor = (PropertyDescriptor) descriptor;
 
-            Collection<ExpressionCodegenExtension> codegenExtensions = ExpressionCodegenExtension.Companion.getInstances(state.getProject());
-            if (!codegenExtensions.isEmpty() && resolvedCall != null) {
-                ExpressionCodegenExtension.Context context = new ExpressionCodegenExtension.Context(this, typeMapper, v);
-                KotlinType returnType = propertyDescriptor.getReturnType();
-                for (ExpressionCodegenExtension extension : codegenExtensions) {
-                    if (returnType != null) {
-                        StackValue value = extension.applyProperty(receiver, resolvedCall, context);
-                        if (value != null) return value;
-                    }
-                }
-            }
+            StackValue propertyByExtension = applyPropertyByExtensionIfApplicable(propertyDescriptor, resolvedCall, receiver);
+            if (propertyByExtension != null) return propertyByExtension;
 
             boolean directToField = isSyntheticField && contextKind() != OwnerKind.DEFAULT_IMPLS;
             ClassDescriptor superCallTarget = resolvedCall == null ? null : getSuperCallTarget(resolvedCall.getCall());
@@ -1723,6 +1714,27 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
             return localOrCaptured;
         }
         throw new UnsupportedOperationException("don't know how to generate reference " + descriptor);
+    }
+
+    @Nullable
+    private StackValue applyPropertyByExtensionIfApplicable(
+            @NotNull PropertyDescriptor propertyDescriptor,
+            @Nullable ResolvedCall<?> resolvedCall,
+            @NotNull StackValue receiver
+    ) {
+        List<ExpressionCodegenExtension> codegenExtensions = new ArrayList<>(ExpressionCodegenExtension.Companion.getInstances(state.getProject()));
+        codegenExtensions.add(CompatExpressionCodegenExtension.INSTANCE);
+        if (!codegenExtensions.isEmpty() && resolvedCall != null) {
+            ExpressionCodegenExtension.Context context = new ExpressionCodegenExtension.Context(this, typeMapper, v);
+            KotlinType returnType = propertyDescriptor.getReturnType();
+            for (ExpressionCodegenExtension extension : codegenExtensions) {
+                if (returnType != null) {
+                    StackValue value = extension.applyProperty(receiver, resolvedCall, context);
+                    if (value != null) return value;
+                }
+            }
+        }
+        return null;
     }
 
     private boolean shouldGenerateSingletonAsThisOrOuterFromContext(ClassDescriptor classDescriptor) {

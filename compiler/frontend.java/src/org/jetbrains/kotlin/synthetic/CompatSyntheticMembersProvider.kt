@@ -182,7 +182,9 @@ class CompatSyntheticMembersProvider(storageManager: StorageManager) : Synthetic
 
     override fun provideSyntheticScope(scope: ResolutionScope, metadata: SyntheticScopesMetadata): ResolutionScope {
         val type = metadata.type
-        if (!metadata.needMemberFunctions || type == null || type.constructor.declarationDescriptor !is ClassDescriptor) return scope
+        // The property can be generated from getters, thus, we should provide a scope for them
+        val needCompat = metadata.needMemberFunctions || metadata.needExtensionProperties
+        if (!needCompat || type == null || type.constructor.declarationDescriptor !is ClassDescriptor) return scope
         return makeSynthetic(Pair(type, scope))
     }
 }
