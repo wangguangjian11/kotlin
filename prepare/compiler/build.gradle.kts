@@ -64,6 +64,7 @@ dependencies {
     fatJarContents(ideaSdkCoreDeps(*coreSdkJarsSimple))
     fatJarContents(ideaSdkDeps("jna-platform"))
     fatJarContents(commonDep("javax.inject"))
+    fatJarContents(compile("org.jetbrains.intellij.deps:trove4j:1.0.20160824"))
     fatJarContents(commonDep("org.jline", "jline"))
     fatJarContents(commonDep("org.fusesource.jansi", "jansi"))
     fatJarContents(protobufFull())
