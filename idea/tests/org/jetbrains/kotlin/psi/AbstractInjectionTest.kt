@@ -16,9 +16,10 @@
 
 package org.jetbrains.kotlin.psi
 
-import com.intellij.injected.editor.DocumentWindowImpl
+import com.intellij.injected.editor.DocumentWindow
 import com.intellij.injected.editor.EditorWindow
 import com.intellij.openapi.util.TextRange
+import com.intellij.psi.impl.source.tree.injected.InjectedLanguageUtil
 import com.intellij.psi.injection.Injectable
 import com.intellij.testFramework.LightProjectDescriptor
 import junit.framework.TestCase
@@ -62,7 +63,7 @@ abstract class AbstractInjectionTest : KotlinLightCodeInsightFixtureTestCase() {
         assertInjectionPresent(languageId, unInjectShouldBePresent)
 
         if (shreds != null) {
-            val actualShreds = (editor.document as DocumentWindowImpl).shreds.map {
+            val actualShreds = InjectedLanguageUtil.getShreds(editor.document as DocumentWindow).map {
                 ShredInfo(it.range, it.rangeInsideHost, it.prefix, it.suffix)
             }
 
