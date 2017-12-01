@@ -49,6 +49,12 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
             String fileName = KotlinTestUtils.navigationMetadata("compiler/testData/codegen/box/android-compat/simpleMapping.kt");
             doTest(fileName);
         }
+
+        @TestMetadata("staticMapping.kt")
+        public void testStaticMapping() throws Exception {
+            String fileName = KotlinTestUtils.navigationMetadata("compiler/testData/codegen/box/android-compat/staticMapping.kt");
+            doTest(fileName);
+        }
     }
 
     @TestMetadata("compiler/testData/codegen/box/annotations")

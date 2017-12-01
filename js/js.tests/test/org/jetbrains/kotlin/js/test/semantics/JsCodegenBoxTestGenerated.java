@@ -55,6 +55,18 @@ public class JsCodegenBoxTestGenerated extends AbstractJsCodegenBoxTest {
             }
             throw new AssertionError("Looks like this test can be unmuted. Remove IGNORE_BACKEND directive for that.");
         }
+
+        @TestMetadata("staticMapping.kt")
+        public void testStaticMapping() throws Exception {
+            String fileName = KotlinTestUtils.navigationMetadata("compiler/testData/codegen/box/android-compat/staticMapping.kt");
+            try {
+                doTest(fileName);
+            }
+            catch (Throwable ignore) {
+                return;
+            }
+            throw new AssertionError("Looks like this test can be unmuted. Remove IGNORE_BACKEND directive for that.");
+        }
     }
 
     @TestMetadata("compiler/testData/codegen/box/annotations")
