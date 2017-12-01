@@ -542,7 +542,6 @@
                         <file file="@{download.dir.intellij-core}/annotations.jar"/>
                         <file file="@{download.dir.intellij-core}/guava-21.0.jar"/>
                         <file file="@{download.dir.intellij-core}/picocontainer.jar"/>
-                        <file file="@{download.dir.intellij-core}/trove4j.jar"/>
 
                         <file file="@{idea.dir}/lib/jdom.jar"/>
                         <file file="@{idea.dir}/lib/jna.jar"/>
@@ -571,7 +570,6 @@
                         <file file="@{download.dir.jps-standalone}/jps-model.jar"/>
                         <file file="@{download.dir.jps-standalone}/log4j.jar"/>
                         <file file="@{download.dir.jps-standalone}/nanoxml-2.2.3.jar"/>
-                        <file file="@{download.dir.jps-standalone}/trove4j.jar"/>
                         <file file="@{download.dir.jps-standalone}/ui-designer-jps-plugin.jar"/>
                         <file file="@{download.dir.jps-standalone}/util.jar"/>
                     </resources>
