@@ -263,7 +263,7 @@ public class InternalFinallyBlockInliner extends CoveringTryCatchNodeProcessor {
         }
     }
 
-    private static void checkCoveringBlocksInvariant(@ReadOnly @NotNull List<TryCatchBlockNodeInfo> currentCoveringNodesFromOuterMost) {
+    private static void checkCoveringBlocksInvariant(@NotNull List<TryCatchBlockNodeInfo> currentCoveringNodesFromOuterMost) {
         boolean isWasOnlyLocal = false;
         for (TryCatchBlockNodeInfo info : currentCoveringNodesFromOuterMost) {
             assert !isWasOnlyLocal || info.getOnlyCopyNotProcess() : "There are some problems with try-catch structure";
@@ -416,7 +416,7 @@ public class InternalFinallyBlockInliner extends CoveringTryCatchNodeProcessor {
     @Nullable
     private FinallyBlockInfo findFinallyBlockBody(
             @NotNull TryCatchBlockNodeInfo tryCatchBlock,
-            @ReadOnly @NotNull List<TryCatchBlockNodeInfo> tryCatchBlocks
+            @NotNull List<TryCatchBlockNodeInfo> tryCatchBlocks
     ) {
         List<TryCatchBlockNodeInfo> sameDefaultHandler = new ArrayList<>();
         LabelNode defaultHandler = null;
