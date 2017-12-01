@@ -404,7 +404,7 @@ class ReferenceVariantsHelper(
         val syntheticScopes = resolutionFacade.getFrontendService(SyntheticScopes::class.java)
         if (kindFilter.acceptsKinds(DescriptorKindFilter.VARIABLES_MASK)) {
             for (extension in receiverTypes.flatMap {
-                val synthetic = syntheticScopes.provideSyntheticScope(it.memberScope, SyntheticScopesMetadata(type = it, needExtensionProperties = true))
+                val synthetic = syntheticScopes.provideSyntheticScope(it.memberScope, SyntheticScopesMetadata(needExtensionProperties = true))
                 synthetic.getContributedDescriptors().cast<Collection<PropertyDescriptor>>()
             }) {
                 process(extension)

@@ -99,10 +99,7 @@ class ConflictingExtensionPropertyInspection : AbstractKotlinInspection() {
         val extensionReceiverType = descriptor.extensionReceiverParameter?.type ?: return null
         return scopes.provideSyntheticScope(
                 extensionReceiverType.memberScope,
-                SyntheticScopesMetadata(
-                        type = extensionReceiverType,
-                        needExtensionProperties = true
-                )
+                SyntheticScopesMetadata(needExtensionProperties = true)
         ).getContributedVariables(descriptor.name, NoLookupLocation.FROM_IDE).firstIsInstanceOrNull()
     }
 

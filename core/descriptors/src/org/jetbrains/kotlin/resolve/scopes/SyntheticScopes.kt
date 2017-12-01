@@ -23,7 +23,6 @@ import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.utils.addToStdlib.cast
 
 data class SyntheticScopesMetadata(
-        val type: KotlinType? = null,
         val needExtensionProperties: Boolean = false,
         val needMemberFunctions: Boolean = false,
         val needStaticFunctions: Boolean = false,
