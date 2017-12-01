@@ -44,6 +44,7 @@ sourceSets {
 dependencies {
     builtinsCompile group: 'org.jetbrains', name: 'annotations', version:'13.0'
     compile group: 'org.jetbrains', name: 'annotations', version:'13.0'
+    compile group: 'org.jetbrains.intellij.deps', name: 'trove4j', version: '1.0.20160824'
     compile sourceSets.builtins.output
     
     testCompile project(':kotlin-test:kotlin-test-junit')
