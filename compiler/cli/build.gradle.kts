@@ -18,6 +18,7 @@ dependencies {
     compile(project(":js:js.serializer"))
     compile(project(":js:js.dce"))
     compile(ideaSdkCoreDeps(*(rootProject.extra["ideaCoreSdkJars"] as Array<String>)))
+    compile("org.jetbrains.intellij.deps:trove4j:1.0.20160824")
     compile(commonDep("org.fusesource.jansi", "jansi"))
     compile(commonDep("org.jline", "jline"))
     compile(files("${System.getProperty("java.home")}/../lib/tools.jar"))

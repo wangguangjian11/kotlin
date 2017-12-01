@@ -9,6 +9,7 @@ dependencies {
     compile(project(":compiler:util"))
     compile(project(":compiler:cli-common"))
     compile(ideaSdkCoreDeps(*(rootProject.extra["ideaCoreSdkJars"] as Array<String>)))
+    compile("org.jetbrains.intellij.deps:trove4j:1.0.20160824")
     compile(project(":kotlin-stdlib"))
 }
 
