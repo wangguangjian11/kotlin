@@ -200,7 +200,6 @@ open class KotlinUParameter(
 
 class KotlinNullabilityUAnnotation(val annotatedElement: PsiElement, override val uastParent: UElement) : UAnnotation, JvmDeclarationUElement {
 
-
     private fun getTargetType(annotatedElement: PsiElement): KotlinType? {
         if (annotatedElement is KtCallableDeclaration) {
             annotatedElement.typeReference?.getType()?.let { return it }
@@ -215,9 +214,7 @@ class KotlinNullabilityUAnnotation(val annotatedElement: PsiElement, override va
         return null
     }
 
-
     val nullability by lz { getTargetType(annotatedElement)?.nullability() }
-
 
     override val attributeValues: List<UNamedExpression>
         get() = emptyList()
