@@ -16,7 +16,10 @@
 
 package org.jetbrains.uast.kotlin
 
+import com.intellij.psi.PsiAnnotation
+import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiNameValuePair
 import org.jetbrains.kotlin.asJava.LightClassUtil
 import org.jetbrains.kotlin.asJava.toLightGetter
 import org.jetbrains.kotlin.asJava.toLightSetter
@@ -177,3 +180,29 @@ abstract class KotlinAbstractUExpression(givenParent: UElement?)
         }
 }
 
+class WrappedUAnnotation(psiAnnotation: PsiAnnotation, override val uastParent: UElement) : UAnnotation, JvmDeclarationUElement {
+
+    override val javaPsi: PsiAnnotation = psiAnnotation
+    override val psi: PsiAnnotation = javaPsi
+    override val sourcePsi: PsiElement? = null
+
+    override val attributeValues: List<UNamedExpression> by lz {
+        psi.parameterList.attributes.map { WrappedUNamedExpression(it, this) }
+    }
+
+    class WrappedUNamedExpression(pair: PsiNameValuePair, override val uastParent: UElement?) : UNamedExpression, JvmDeclarationUElement {
+        override val name: String? = pair.name
+        override val psi = pair
+        override val javaPsi: PsiElement? = psi
+        override val sourcePsi: PsiElement? = null
+        override val annotations: List<UAnnotation> = emptyList()
+        override val expression: UExpression by lz { toUExpression(psi.value) }
+    }
+
+    override val qualifiedName: String? = psi.qualifiedName
+    override fun findAttributeValue(name: String?): UExpression? = psi.findAttributeValue(name)?.let { toUExpression(it) }
+    override fun findDeclaredAttributeValue(name: String?): UExpression? = psi.findDeclaredAttributeValue(name)?.let { toUExpression(it) }
+    override fun resolve(): PsiClass? = psi.nameReferenceElement?.resolve() as? PsiClass
+}
+
+private fun toUExpression(psi: PsiElement?): UExpression = psi.toUElementOfType<UExpression>() ?: UastEmptyExpression

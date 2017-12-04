@@ -28,11 +28,11 @@ import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.jetbrains.uast.*
 import org.jetbrains.uast.java.AbstractJavaUClass
+import org.jetbrains.uast.java.LazyJavaUTypeReferenceExpression
 import org.jetbrains.uast.kotlin.declarations.KotlinUMethod
 import org.jetbrains.uast.kotlin.declarations.UastLightIdentifier
 
-abstract class AbstractKotlinUClass(private val givenParent: UElement?) : AbstractJavaUClass(), JvmDeclarationUElement {
-    override val uastParent: UElement? by lz { givenParent ?: convertParent() }
+abstract class AbstractKotlinUClass(givenParent: UElement?) : KotlinAbstractUElement(givenParent), UClass, JvmDeclarationUElement {
 
     //TODO: should be merged with KotlinAbstractUElement.convertParent() after detaching from AbstractJavaUClass
     override fun convertParent(): UElement? =
@@ -42,6 +42,40 @@ abstract class AbstractKotlinUClass(private val givenParent: UElement?) : Abstra
                     else -> it.toUElement()
                 }
             } ?: (psi.parent ?: psi.containingFile).toUElement()
+
+    override val uastDeclarations by lz {
+        mutableListOf<UDeclaration>().apply {
+            addAll(fields)
+            addAll(initializers)
+            addAll(methods)
+            addAll(innerClasses)
+        }
+    }
+
+    //TODO: convert to Kotlin-uast
+    override val uastSuperTypes: List<UTypeReferenceExpression>
+        get() {
+            fun createJavaUTypeReferenceExpression(referenceElement: PsiJavaCodeReferenceElement) =
+                    LazyJavaUTypeReferenceExpression(referenceElement, this) {
+                        JavaPsiFacade.getElementFactory(referenceElement.project).createType(referenceElement)
+                    }
+
+            return psi.extendsList?.referenceElements?.map(::createJavaUTypeReferenceExpression).orEmpty() +
+                   psi.implementsList?.referenceElements?.map(::createJavaUTypeReferenceExpression).orEmpty()
+        }
+
+    override val uastAnchor: UElement?
+        get() = UIdentifier(psi.nameIdentifier, this)
+
+    //TODO: no test coverage
+    override val annotations: List<UAnnotation> by lz {
+        val sourcePsi = sourcePsi ?: return@lz psi.annotations.map { WrappedUAnnotation(it, this) as UAnnotation }
+        (sourcePsi as? KtModifierListOwner)?.annotationEntries.orEmpty().map { KotlinUAnnotation(it, this) }
+    }
+
+    override fun equals(other: Any?) = other is AbstractKotlinUClass && psi == other.psi
+    override fun hashCode() = psi.hashCode()
+
 }
 
 open class KotlinUClass private constructor(
@@ -62,9 +96,6 @@ open class KotlinUClass private constructor(
     override fun getNameIdentifier(): PsiIdentifier? = UastLightIdentifier(psi, ktClass)
 
     override fun getContainingFile(): PsiFile? = unwrapFakeFileForLightClass(psi.containingFile)
-
-    override val annotations: List<UAnnotation>
-        get() = ktClass?.annotationEntries?.map { KotlinUAnnotation(it, this) } ?: emptyList()
 
     override val uastAnchor: UElement
         get() = UIdentifier(nameIdentifier, this)

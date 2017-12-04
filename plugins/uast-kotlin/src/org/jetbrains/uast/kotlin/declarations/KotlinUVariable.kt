@@ -95,34 +95,7 @@ abstract class AbstractKotlinUVariable(givenParent: UElement?)
 
     override fun equals(other: Any?) = other is AbstractKotlinUVariable && psi == other.psi
 
-    class WrappedUAnnotation(psiAnnotation: PsiAnnotation, override val uastParent: UElement) : UAnnotation, JvmDeclarationUElement {
-
-        override val javaPsi: PsiAnnotation = psiAnnotation
-        override val psi: PsiAnnotation = javaPsi
-        override val sourcePsi: PsiElement? = null
-
-        override val attributeValues: List<UNamedExpression> by lz {
-            psi.parameterList.attributes.map { WrappedUNamedExpression(it, this) }
-        }
-
-        class WrappedUNamedExpression(pair: PsiNameValuePair, override val uastParent: UElement?) : UNamedExpression, JvmDeclarationUElement {
-            override val name: String? = pair.name
-            override val psi = pair
-            override val javaPsi: PsiElement? = psi
-            override val sourcePsi: PsiElement? = null
-            override val annotations: List<UAnnotation> = emptyList()
-            override val expression: UExpression by lz { toUExpression(psi.value) }
-        }
-
-        override val qualifiedName: String? = psi.qualifiedName
-        override fun findAttributeValue(name: String?): UExpression? = psi.findAttributeValue(name)?.let { toUExpression(it) }
-        override fun findDeclaredAttributeValue(name: String?): UExpression? = psi.findDeclaredAttributeValue(name)?.let { toUExpression(it) }
-        override fun resolve(): PsiClass? = psi.nameReferenceElement?.resolve() as? PsiClass
-    }
-
 }
-
-private fun toUExpression(psi: PsiElement?): UExpression = psi.toUElementOfType<UExpression>() ?: UastEmptyExpression
 
 class KotlinUVariable(
         psi: PsiVariable,
