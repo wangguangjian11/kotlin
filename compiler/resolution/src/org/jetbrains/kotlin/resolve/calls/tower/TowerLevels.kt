@@ -167,8 +167,10 @@ internal class MemberScopeTowerLevel(
     override fun getFunctions(name: Name, extensionReceiver: ReceiverValueWithSmartCastInfo?): Collection<CandidateWithBoundDispatchReceiver> {
         return collectMembers { type ->
             type.getInnerConstructors(name, location) + if (type == null) getContributedFunctions(name, location)
-            else syntheticScopes.provideSyntheticScope(this, SyntheticScopesMetadata(needMemberFunctions = true))
-                    .getContributedFunctions(name, location)
+            else syntheticScopes.provideSyntheticScope(
+                    this,
+                    SyntheticScopesMetadata(type = type, needMemberFunctions = true)
+            ).getContributedFunctions(name, location)
         }
     }
 
@@ -248,10 +250,15 @@ internal class SyntheticScopeBasedTowerLevel(
         val processedScopes = hashSetOf<ResolutionScope>()
         return extensionReceiver.allTypes.flatMap { type ->
             if (!processedScopes.add(type.memberScope)) emptyList()
-            else syntheticScopes.provideSyntheticScope(type.memberScope, SyntheticScopesMetadata(needExtensionProperties = true))
-                    .getContributedVariables(name, location)
-                    .filterIsInstance<SyntheticPropertyDescriptor>()
-                    .map { createCandidateDescriptor(it, dispatchReceiver = null) }
+            else syntheticScopes.provideSyntheticScope(
+                    type.memberScope,
+                    SyntheticScopesMetadata(
+                            type = type,
+                            needExtensionProperties = true
+                    )
+            ).getContributedVariables(name, location).filterIsInstance<SyntheticPropertyDescriptor>().map { property ->
+                createCandidateDescriptor(property, dispatchReceiver = null)
+            }
         }
     }
 
