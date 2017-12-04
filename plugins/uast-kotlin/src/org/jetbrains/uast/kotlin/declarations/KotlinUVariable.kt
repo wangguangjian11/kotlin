@@ -79,19 +79,15 @@ abstract class AbstractKotlinUVariable(givenParent: UElement?)
     override fun getContainingFile(): PsiFile = unwrapFakeFileForLightClass(psi.containingFile)
 
     override val annotations by lz {
-
         val sourcePsi = sourcePsi ?: return@lz psi.annotations.map { WrappedUAnnotation(it, this) }
-
         SmartList<UAnnotation>(KotlinNullabilityUAnnotation(sourcePsi, this)).also { annotations ->
             (sourcePsi as? KtModifierListOwner)?.annotationEntries?.
-                    filter { it.useSiteTarget?.getAnnotationUseSiteTarget().let { acceptsAnnotationTarget(it) } }?.
+                    filter { acceptsAnnotationTarget(it.useSiteTarget?.getAnnotationUseSiteTarget()) }?.
                     mapTo(annotations) { KotlinUAnnotation(it, this) }
         }
-
     }
 
     abstract protected fun acceptsAnnotationTarget(target: AnnotationUseSiteTarget?): Boolean
-
 
     override val typeReference by lz { getLanguagePlugin().convertOpt<UTypeReferenceExpression>(psi.typeElement, this) }
 
@@ -175,17 +171,15 @@ open class KotlinUParameter(
 
     private val isKtConstructorParam by lz { sourcePsi?.getParentOfType<KtCallableDeclaration>(true)?.let { it is KtPrimaryConstructor } }
 
-    override fun acceptsAnnotationTarget(target: AnnotationUseSiteTarget?): Boolean =
-            sourcePsi.let { sourcePsi ->
-                (sourcePsi is KtParameter) &&
-                (isKtConstructorParam == isLightConstructorParam && target == null ||
-                 if (isLightConstructorParam == true)
-                     target == AnnotationUseSiteTarget.CONSTRUCTOR_PARAMETER
-                 else
-                     target == AnnotationUseSiteTarget.SETTER_PARAMETER
-                )
-            }
-
+    override fun acceptsAnnotationTarget(target: AnnotationUseSiteTarget?): Boolean {
+        if (sourcePsi !is KtParameter) return false
+        if (isKtConstructorParam == isLightConstructorParam && target == null) return true
+        when (target) {
+            AnnotationUseSiteTarget.CONSTRUCTOR_PARAMETER -> return isLightConstructorParam == true
+            AnnotationUseSiteTarget.SETTER_PARAMETER -> return isLightConstructorParam != true
+            else -> return false
+        }
+    }
 
     override fun getInitializer(): PsiExpression? {
         return super<AbstractKotlinUVariable>.getInitializer()
