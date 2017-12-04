@@ -16,10 +16,9 @@
 
 package org.jetbrains.kotlin.psi
 
-import com.intellij.injected.editor.DocumentWindow
 import com.intellij.injected.editor.EditorWindow
+import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.util.TextRange
-import com.intellij.psi.impl.source.tree.injected.InjectedLanguageUtil
 import com.intellij.psi.injection.Injectable
 import com.intellij.testFramework.LightProjectDescriptor
 import junit.framework.TestCase
@@ -32,6 +31,7 @@ import org.jetbrains.kotlin.idea.test.KotlinLightCodeInsightFixtureTestCase
 import org.jetbrains.kotlin.idea.test.KotlinLightCodeInsightFixtureTestCaseBase
 import org.jetbrains.kotlin.idea.test.KotlinLightProjectDescriptor
 import org.jetbrains.kotlin.idea.test.KotlinWithJdkAndRuntimeLightProjectDescriptor
+import org.jetbrains.kotlin.utils.SmartList
 
 abstract class AbstractInjectionTest : KotlinLightCodeInsightFixtureTestCase() {
     override fun getProjectDescriptor(): LightProjectDescriptor {
@@ -63,8 +63,13 @@ abstract class AbstractInjectionTest : KotlinLightCodeInsightFixtureTestCase() {
         assertInjectionPresent(languageId, unInjectShouldBePresent)
 
         if (shreds != null) {
-            val actualShreds = InjectedLanguageUtil.getShreds(editor.document as DocumentWindow).map {
-                ShredInfo(it.range, it.rangeInsideHost, it.prefix, it.suffix)
+            val actualShreds = SmartList<ShredInfo>().apply {
+                val host = InjectedLanguageManager.getInstance(project).getInjectionHost(file.viewProvider)
+                InjectedLanguageManager.getInstance(project).enumerate(host, { _, placesInFile ->
+                    addAll(placesInFile.map {
+                        ShredInfo(it.range, it.rangeInsideHost, it.prefix, it.suffix)
+                    })
+                })
             }
 
             assertOrderedEquals(
