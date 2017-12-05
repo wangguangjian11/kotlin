@@ -45,15 +45,15 @@ public class SubView extends View {
 // FILE: test.kt
 fun box(): String {
     View.noArgs()
-//    View.multipleArgs()
-//    if (View.FIELD != "OK") return View.FIELD
-//    View.samAdapter {}
-//    SubView.noArgs()
-//    SubView.FIELD
-//    View.boxing(1)
-//    if (!View.boxingResult()) return "FAIL: boxingResult"
-//    View.differentParamType(0)
-//    if (View.differentReturnType() == 0) return "FAIL: differentReturnType"
-//    View.vararg()
+    View.multipleArgs()
+    if (View.FIELD != "OK") return View.FIELD
+    View.samAdapter {}
+    SubView.noArgs()
+    SubView.FIELD
+    View.boxing(1)
+    if (!View.boxingResult()) return "FAIL: boxingResult"
+    View.differentParamType(0)
+    if (View.differentReturnType() == 0) return "FAIL: differentReturnType"
+    View.vararg()
     return "OK"
 }

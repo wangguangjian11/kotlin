@@ -27,7 +27,8 @@ data class SyntheticScopesMetadata(
         val needExtensionProperties: Boolean = false,
         val needMemberFunctions: Boolean = false,
         val needStaticFunctions: Boolean = false,
-        val needConstructors: Boolean = false
+        val needConstructors: Boolean = false,
+        val needStaticFields: Boolean = false
 )
 
 interface SyntheticScopeProvider {

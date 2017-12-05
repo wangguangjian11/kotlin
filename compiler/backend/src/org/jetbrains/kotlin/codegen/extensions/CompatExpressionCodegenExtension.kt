@@ -16,7 +16,9 @@
 
 package org.jetbrains.kotlin.codegen.extensions
 
+import org.jetbrains.kotlin.builtins.KotlinBuiltIns
 import org.jetbrains.kotlin.codegen.*
+import org.jetbrains.kotlin.load.java.sam.SamAdapterDescriptor
 import org.jetbrains.kotlin.resolve.calls.model.ResolvedCall
 import org.jetbrains.kotlin.synthetic.CompatSyntheticFunctionDescriptor
 import org.jetbrains.kotlin.synthetic.SamAdapterExtensionFunctionDescriptor
@@ -44,13 +46,18 @@ object CompatExpressionCodegenExtension : ExpressionCodegenExtension {
         var candidateDescriptor = resolvedCall.candidateDescriptor
         if (candidateDescriptor is SamAdapterExtensionFunctionDescriptor) {
             candidateDescriptor = candidateDescriptor.baseDescriptorForSynthetic
+        } else if (candidateDescriptor is SamAdapterDescriptor<*>) {
+            candidateDescriptor = candidateDescriptor.baseDescriptorForSynthetic
         }
         val functionDescriptor = candidateDescriptor as? CompatSyntheticFunctionDescriptor ?: return null
+        val isStatic = resolvedCall.dispatchReceiver == null
         val callable = c.typeMapper.mapToCallableMethod(functionDescriptor, false)
         val baseDescriptor = functionDescriptor.baseDescriptorForSynthetic
         val baseCallable = c.typeMapper.mapToCallableMethod(baseDescriptor, false)
 
-        putReceiverOnStack(resolvedCall, receiver, c)
+        if (!isStatic) {
+            putReceiverOnStack(resolvedCall, receiver, c)
+        }
         val argGen = CallBasedArgumentGenerator(
                 c.codegen,
                 c.codegen.defaultCallGenerator,
@@ -62,7 +69,9 @@ object CompatExpressionCodegenExtension : ExpressionCodegenExtension {
                 resolvedCall.valueArguments.values.toList(),
                 null
         )
-        return StackValue.functionCall(baseDescriptor.returnType?.asmType(c.typeMapper) ?: Type.VOID_TYPE) { v ->
+        val returnType = if (baseDescriptor.returnType == null || KotlinBuiltIns.isUnit(baseDescriptor.returnType!!)) Type.VOID_TYPE
+        else baseDescriptor.returnType!!.asmType(c.typeMapper)
+        return StackValue.functionCall(returnType) { v ->
             v.invokestatic(
                     baseCallable.owner.internalName,
                     baseCallable.getAsmMethod().name,
@@ -111,7 +120,8 @@ object CompatExpressionCodegenExtension : ExpressionCodegenExtension {
                 putReceiver(v, false)
                 rightSide.put(rightSide.type, v)
                 storeSelector(rightSide.type, v)
-            } else {
+            }
+            else {
                 super.store(rightSide, v, skipReceiver)
             }
         }
@@ -123,7 +133,7 @@ object CompatExpressionCodegenExtension : ExpressionCodegenExtension {
             setter.genInvokeInstruction(v)
 
             val returnType = setter.returnType
-            if (returnType !== Type.VOID_TYPE) {
+            if (returnType != Type.VOID_TYPE) {
                 AsmUtil.pop(v, returnType)
             }
         }

@@ -184,10 +184,12 @@ internal class MemberScopeTowerLevel(
 }
 
 internal class QualifierScopeTowerLevel(scopeTower: ImplicitScopeTower, val qualifier: QualifierReceiver) : AbstractScopeTowerLevel(scopeTower) {
-    override fun getVariables(name: Name, extensionReceiver: ReceiverValueWithSmartCastInfo?) = qualifier.staticScope
-            .getContributedVariables(name, location).map {
-                createCandidateDescriptor(it, dispatchReceiver = null)
-            }
+    private val syntheticScopes = scopeTower.syntheticScopes
+    override fun getVariables(name: Name, extensionReceiver: ReceiverValueWithSmartCastInfo?) =
+            syntheticScopes
+                    .provideSyntheticScope(qualifier.staticScope, SyntheticScopesMetadata(needStaticFields = true))
+                    .getContributedVariables(name, location)
+                    .map { createCandidateDescriptor(it, dispatchReceiver = null) }
 
     override fun getObjects(name: Name, extensionReceiver: ReceiverValueWithSmartCastInfo?) = qualifier.staticScope
             .getContributedObjectVariables(name, location).map {
