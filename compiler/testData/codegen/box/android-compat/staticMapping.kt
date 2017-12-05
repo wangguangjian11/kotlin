@@ -49,7 +49,7 @@ fun box(): String {
     if (View.FIELD != "OK") return View.FIELD
     View.samAdapter {}
     SubView.noArgs()
-    SubView.FIELD
+    if (SubView.FIELD != "OK") return "FAIL: SubView.FIELD"
     View.boxing(1)
     if (!View.boxingResult()) return "FAIL: boxingResult"
     View.differentParamType(0)
