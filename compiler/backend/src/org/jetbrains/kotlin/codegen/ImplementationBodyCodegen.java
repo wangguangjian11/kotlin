@@ -1510,7 +1510,8 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
                                       constructorDescriptor, parameters, superParameters);
                 // Super constructor requires OUTER parameter, but our OUTER instance may be different from what is expected by the super
                 // constructor. We need to traverse our outer classes from the bottom up, to find the needed class. See innerExtendsOuter.kt
-                ClassDescriptor outerForSuper = (ClassDescriptor) superConstructor.getContainingDeclaration().getContainingDeclaration();
+                ClassDescriptor outerForSuper = CodegenUtilKt.getEffectiveOuterClass(superConstructor.getConstructedClass());
+                assert outerForSuper != null : "No outer class for " + superConstructor.getConstructedClass();
                 StackValue outer = codegen.generateThisOrOuter(outerForSuper, true, true);
                 outer.put(outer.type, codegen.v);
                 superIndex++;

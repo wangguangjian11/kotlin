@@ -438,3 +438,11 @@ val CodegenContext<*>.parentContexts
 
 val CodegenContext<*>.contextStackText
     get() = parentContextsWithSelf.joinToString(separator = "\n") { it.toString() }
+
+val ClassDescriptor.effectiveOuterClass: ClassDescriptor?
+    get() =
+        when {
+            isInner -> containingDeclaration as? ClassDescriptor
+            DescriptorUtils.isLocal(this) -> DescriptorUtils.getSuperClassDescriptor(this)?.effectiveOuterClass
+            else -> null
+        }

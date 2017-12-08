@@ -19,6 +19,7 @@ package org.jetbrains.kotlin.codegen.binding;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.kotlin.codegen.CodegenUtilKt;
 import org.jetbrains.kotlin.codegen.JvmCodegenUtil;
 import org.jetbrains.kotlin.codegen.SamType;
 import org.jetbrains.kotlin.codegen.state.GenerationState;
@@ -157,7 +158,7 @@ public class CodegenBinding {
 
         MutableClosure closure = new MutableClosure(classDescriptor, enclosing);
 
-        if (classDescriptor.isInner()) {
+        if (CodegenUtilKt.getEffectiveOuterClass(classDescriptor) != null) {
             closure.setCaptureThis();
         }
 
