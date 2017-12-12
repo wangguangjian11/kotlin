@@ -26,6 +26,7 @@ import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.PsiReference
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.PsiSearchHelper
+import com.intellij.psi.search.SearchScope
 import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.util.Processor
 import org.jetbrains.kotlin.descriptors.DeclarationDescriptorWithVisibility
@@ -37,6 +38,7 @@ import org.jetbrains.kotlin.idea.core.toDescriptor
 import org.jetbrains.kotlin.idea.quickfix.AddModifierFix
 import org.jetbrains.kotlin.idea.refactoring.isConstructorDeclaredProperty
 import org.jetbrains.kotlin.idea.search.isCheapEnoughToSearchConsideringOperators
+import org.jetbrains.kotlin.idea.util.projectStructure.allModules
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
@@ -108,7 +110,13 @@ class MemberVisibilityCanBePrivateInspection : AbstractKotlinInspection() {
 
         var otherUsageFound = false
         var inClassUsageFound = false
-        ReferencesSearch.search(declaration, useScope).forEach(Processor<PsiReference> {
+
+        val restrictedScope = declaration.project.allModules().map {
+            it.moduleContentScope
+        }.fold<GlobalSearchScope, SearchScope?>(null) { previous, next ->
+            previous?.union(next) ?: next
+        }?.intersectWith(useScope) ?: useScope
+        ReferencesSearch.search(declaration, restrictedScope).forEach(Processor<PsiReference> {
             val usage = it.element
             if (classOrObject != usage.getParentOfType<KtClassOrObject>(false)) {
                 otherUsageFound = true
