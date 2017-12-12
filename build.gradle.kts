@@ -356,6 +356,7 @@ tasks {
 
         dependsOn("scriptingTest")
         dependsOn(":kotlin-build-common:test")
+        dependsOn(":compiler:incremental-compilation-impl:test")
     }
 
     "examplesTest" {
