@@ -248,7 +248,7 @@ class SamAdapterFunctionsScope(
             name: Name,
             kind: CallableMemberDescriptor.Kind,
             source: SourceElement
-    ) : SamAdapterExtensionFunctionDescriptor, JavaMethodDescriptor(containingDeclaration, original, annotations, name, kind, source) {
+    ) : SamAdapterExtensionFunctionDescriptor, SimpleFunctionDescriptorImpl(containingDeclaration, original, annotations, name, kind, source) {
 
         override var baseDescriptorForSynthetic: FunctionDescriptor by Delegates.notNull()
             private set
