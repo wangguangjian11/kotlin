@@ -147,7 +147,7 @@ object KotlinJavascriptSerializationUtil {
         val serializerExtension = KotlinJavascriptSerializerExtension(fileRegistry)
         val serializer = DescriptorSerializer.createTopLevel(serializerExtension)
 
-        val classDescriptors = DescriptorSerializer.sort(scope).filterIsInstance<ClassDescriptor>()
+        val classDescriptors = DescriptorSerializer.sort(scope.filterIsInstance<ClassDescriptor>())
 
         fun serializeClasses(descriptors: Collection<DeclarationDescriptor>) {
             fun serializeClass(classDescriptor: ClassDescriptor) {
