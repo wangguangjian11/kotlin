@@ -157,13 +157,12 @@ public class JsConfig {
     }
 
     public boolean checkLibFilesAndReportErrors(@NotNull JsConfig.Reporter report) {
-        return checkLibFilesAndReportErrors(getLibraries(), report, null);
+        return checkLibFilesAndReportErrors(getLibraries(), report);
     }
 
     private boolean checkLibFilesAndReportErrors(
             @NotNull Collection<String> libraries,
-            @NotNull JsConfig.Reporter report,
-            @Nullable Function1<List<KotlinJavascriptMetadata>, Unit> action
+            @NotNull JsConfig.Reporter report
     ) {
         if (libraries.isEmpty()) {
             return false;
@@ -217,17 +216,20 @@ public class JsConfig {
                 }
             }
 
-            if (action != null) {
-                action.invoke(metadataList);
+            Set<String> friendLibsSet = new HashSet<>(getFriends());
+            metadata.addAll(metadataList);
+            if (friendLibsSet.contains(path)){
+                friends.addAll(metadataList);
             }
         }
 
+        initialized = true;
         return false;
     }
 
     @NotNull
     public List<JsModuleDescriptor<ModuleDescriptorImpl>> getModuleDescriptors() {
-        init();
+        checkInitialized();
         if (moduleDescriptors != null) return moduleDescriptors;
 
         moduleDescriptors = new SmartList<>();
@@ -272,7 +274,7 @@ public class JsConfig {
 
     @NotNull
     public List<JsModuleDescriptor<ModuleDescriptorImpl>> getFriendModuleDescriptors() {
-        init();
+        checkInitialized();
         if (friendModuleDescriptors != null) return friendModuleDescriptors;
 
         friendModuleDescriptors = new SmartList<>();
@@ -286,35 +288,8 @@ public class JsConfig {
         return friendModuleDescriptors;
     }
 
-    private void init() {
-        if (initialized) return;
-
-        if (!getLibraries().isEmpty()) {
-            JsConfig.Reporter reporter = new Reporter() {
-                @Override
-                public void error(@NotNull String message) {
-                    throw new IllegalStateException(message);
-                }
-            };
-
-            boolean hasErrors = checkLibFilesAndReportErrors(getFriends(), reporter, metaList -> {
-                metadata.addAll(metaList);
-                friends.addAll(metaList);
-
-                return Unit.INSTANCE;
-            });
-
-
-            hasErrors |= checkLibFilesAndReportErrors(CollectionsKt.subtract(getLibraries(), getFriends()), reporter, metaList -> {
-                metadata.addAll(metaList);
-
-                return Unit.INSTANCE;
-            });
-
-            assert !hasErrors : "hasErrors should be false";
-        }
-
-        initialized = true;
+    private void checkInitialized() {
+        assert initialized: "JSConfig was not initialized";
     }
 
     private final IdentityHashMap<KotlinJavascriptMetadata, JsModuleDescriptor<ModuleDescriptorImpl>> factoryMap = new IdentityHashMap<>();
