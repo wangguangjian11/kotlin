@@ -72,17 +72,16 @@ class KotlinStructureViewElement(val element: NavigatablePsiElement,
     }
 
     override fun getChildrenBase(): Collection<StructureViewTreeElement> {
-        return childrenDeclarations.map { KotlinStructureViewElement(it, false) }
-    }
-
-    private val childrenDeclarations: List<KtDeclaration>
-        get() = when (element) {
+        val children = when (element) {
             is KtFile -> element.declarations
             is KtClass -> element.getStructureDeclarations()
             is KtClassOrObject -> element.declarations
             is KtFunction, is KtClassInitializer, is KtProperty -> element.collectLocalDeclarations()
             else -> emptyList()
         }
+
+        return children.map { KotlinStructureViewElement(it, false) }
+    }
 
     private fun PsiElement.collectLocalDeclarations(): List<KtDeclaration> {
         val result = mutableListOf<KtDeclaration>()
