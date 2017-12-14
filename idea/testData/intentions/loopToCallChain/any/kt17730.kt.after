@@ -1,0 +1,6 @@
+// WITH_RUNTIME
+// INTENTION_TEXT: "Replace with 'all{}'"
+fun foo(): Boolean {
+    val list = listOf(1, 2, 3, 4, 5)
+    return list.all { it <= 3 }
+}
