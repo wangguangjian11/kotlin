@@ -268,8 +268,12 @@ public class KaptJVMCompilerMojo extends K2JVMCompileMojo {
         mkdirsSafe(file);
     }
 
-    private static Map<String, String> parseOptionList(List<String> rawOptions) {
+    private static Map<String, String> parseOptionList(@Nullable List<String> rawOptions) {
         Map<String, String> map = new LinkedHashMap<>();
+
+        if (rawOptions == null) {
+            return map;
+        }
 
         for (String option : rawOptions) {
             int equalsIndex = option.indexOf("=");
