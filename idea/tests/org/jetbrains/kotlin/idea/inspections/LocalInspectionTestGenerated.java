@@ -1307,6 +1307,12 @@ public class LocalInspectionTestGenerated extends AbstractLocalInspectionTest {
             doTest(fileName);
         }
 
+        @TestMetadata("getter.kt")
+        public void testGetter() throws Exception {
+            String fileName = KotlinTestUtils.navigationMetadata("idea/testData/inspectionsLocal/mayBeConstant/getter.kt");
+            doTest(fileName);
+        }
+
         @TestMetadata("inClass.kt")
         public void testInClass() throws Exception {
             String fileName = KotlinTestUtils.navigationMetadata("idea/testData/inspectionsLocal/mayBeConstant/inClass.kt");
