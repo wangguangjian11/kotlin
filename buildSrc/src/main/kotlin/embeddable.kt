@@ -108,7 +108,7 @@ fun Project.rewriteDepsToShadedJar(originalJarTask: Jar, shadowJarTask: Zip, bod
     val originalFiles by lazy {
         val jarContents = zipTree(originalJarTask.outputs.files.singleFile).files
         val basePath = jarContents.find { it.name == "MANIFEST.MF" }?.parentFile?.parentFile ?: throw GradleException("cannot determine the jar root dir")
-        jarContents.map { it.relativeTo(basePath).path }.toSet()
+        jarContents.map { it.relativeTo(basePath).path.replace('\\', '/') }.toSet()
     }
     return task<Jar>("rewrittenDepsJar") {
         originalJarTask.apply {
@@ -120,7 +120,14 @@ fun Project.rewriteDepsToShadedJar(originalJarTask: Jar, shadowJarTask: Zip, bod
             classifier = "shadow"
         }
         dependsOn(shadowJarTask)
-        from(project.zipTree(shadowJarTask.outputs.files.singleFile)) { include { originalFiles.any { originalFile -> it.file.canonicalPath.endsWith(originalFile) } } }
+        from(project.zipTree(shadowJarTask.outputs.files.singleFile)) {
+            include {
+                val relativePathsSegments = it.relativePath.segments.asList()
+                relativePathsSegments.indices.any { startIndex ->
+                    relativePathsSegments.subList(startIndex, relativePathsSegments.size).joinToString("/") in originalFiles
+                }
+            }
+        }
         body()
     }
 }
