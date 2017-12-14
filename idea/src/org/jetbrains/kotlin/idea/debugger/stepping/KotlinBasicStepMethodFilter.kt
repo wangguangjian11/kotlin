@@ -24,6 +24,7 @@ import com.sun.jdi.Location
 import org.jetbrains.kotlin.builtins.functions.FunctionInvokeDescriptor
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.CallableMemberDescriptor.Kind.*
+import org.jetbrains.kotlin.descriptors.synthetic.SyntheticMemberDescriptor
 import org.jetbrains.kotlin.idea.caches.resolve.resolveToDescriptorIfAny
 import org.jetbrains.kotlin.idea.core.getDirectlyOverriddenDeclarations
 import org.jetbrains.kotlin.idea.util.application.runReadAction
@@ -105,5 +106,13 @@ class KotlinBasicStepMethodFilter(
 }
 
 private fun compareDescriptors(d1: DeclarationDescriptor, d2: DeclarationDescriptor): Boolean {
+    if (d1 is SyntheticMemberDescriptor<*>) {
+        return compareDescriptors(d1.baseDescriptorForSynthetic, d2)
+    }
+
+    if (d2 is SyntheticMemberDescriptor<*>) {
+        return compareDescriptors(d1, d2.baseDescriptorForSynthetic)
+    }
+
     return d1 == d2 || d1.original == d2.original
 }
