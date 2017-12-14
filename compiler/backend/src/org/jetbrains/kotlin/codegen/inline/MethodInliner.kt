@@ -24,6 +24,7 @@ import org.jetbrains.kotlin.codegen.optimization.ApiVersionCallsPreprocessingMet
 import org.jetbrains.kotlin.codegen.optimization.FixStackWithLabelNormalizationMethodTransformer
 import org.jetbrains.kotlin.codegen.optimization.common.InsnSequence
 import org.jetbrains.kotlin.codegen.optimization.common.isMeaningful
+import org.jetbrains.kotlin.codegen.optimization.fixStack.peek
 import org.jetbrains.kotlin.codegen.optimization.fixStack.top
 import org.jetbrains.kotlin.utils.SmartList
 import org.jetbrains.kotlin.utils.SmartSet
@@ -488,6 +489,26 @@ class MethodInliner(
                 else if (cur.opcode == Opcodes.POP) {
                     getLambdaIfExistsAndMarkInstructions(frame.top()!!, true, instructions, sources, toDelete)?.let {
                         toDelete.add(cur)
+                    }
+                }
+                else if (cur.opcode == Opcodes.PUTFIELD) {
+                    //Recognize next contract's pattern in inline lambda
+                    //  ALOAD 0
+                    //  SOME_VALUE
+                    //  PUTFIELD $capturedField
+                    // and transform it to
+                    //  SOME_VALUE
+                    //  PUTSTATIC $$$$capturedField
+                    val fieldInsn = cur as FieldInsnNode
+                    if (isCapturedFieldName(fieldInsn.name) &&
+                        nodeRemapper is InlinedLambdaRemapper &&
+                        nodeRemapper.originalLambdaInternalName == fieldInsn.owner) {
+                        val thisInsn = frame.peek(1)?.insns?.singleOrNull()
+                        if (thisInsn is VarInsnNode && thisInsn.`var` == 0) {
+                            toDelete.add(thisInsn)
+                            fieldInsn.name = FieldRemapper.foldName(fieldInsn.name)
+                            fieldInsn.opcode = Opcodes.PUTSTATIC
+                        }
                     }
                 }
             }
