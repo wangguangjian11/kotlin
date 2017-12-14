@@ -37,7 +37,6 @@ abstract class AbstractIncrementalJsCompilerRunnerTest : AbstractIncrementalComp
     override fun createCompilerArguments(destinationDir: File, testDir: File): K2JSCompilerArguments =
             K2JSCompilerArguments().apply {
                 outputFile = File(destinationDir, "${testDir.name}.js").path
-                libraries = kotlinStdlibJs.path
                 sourceMap = true
             }
 }
