@@ -143,10 +143,5 @@ abstract class AbstractIncrementalCompilerRunnerTestBase<Args : CommonCompilerAr
         protected val kotlinStdlibJvm: File = File(distKotlincLib, "kotlin-stdlib.jar").also {
             UsefulTestCase.assertExists(it)
         }
-
-        @JvmStatic
-        protected val kotlinStdlibJs: File = File(distKotlincLib, "kotlin-stdlib-js.jar").also {
-            UsefulTestCase.assertExists(it)
-        }
     }
 }
